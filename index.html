@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Darken</title>
+  <script type="text/javascript" src="darken.js"></script>
+  <style type="text/css">
+   body {
+       background: #333;
+   }
+
+   #lightsout {
+       width: 600px;
+       height: 600px;
+   }
+
+   .winner {
+       background-color: black;
+   }
+
+   .winner .square.off {
+       transition: background-color 1.5s linear;
+       background-color: black;
+   }
+
+
+   .square {
+       width: 100px;
+       height: 100px;
+       margin: 10px;
+       float: left;
+       border-radius: 2px;
+       transition: background-color 0.25s linear;
+   }
+
+   .square.off {
+       background-color: #666;
+   }
+
+   .square.on {
+       background-color: #FFF;
+   }
+  </style>
+</head>
+
+<body>
+</body>
+
+<script type="text/javascript">
+ function getRandomInt(min, max) {
+     return Math.floor(Math.random() * (max - min)) + min;
+ }
+ var points = [
+     {x: getRandomInt(0, 5), y: getRandomInt(0, 5)},
+     {x: getRandomInt(0, 5), y: getRandomInt(0, 5)},
+     {x: getRandomInt(0, 5), y: getRandomInt(0, 5)},
+     {x: getRandomInt(0, 5), y: getRandomInt(0, 5)},
+     {x: getRandomInt(0, 5), y: getRandomInt(0, 5)},
+ ];
+ var app = Elm.fullscreen(Elm.Darken, {startTime: Date.now(), initialPoints: points});
+</script>
+
+</html>
