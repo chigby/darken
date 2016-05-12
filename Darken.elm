@@ -1,60 +1,97 @@
-module Darken where
+module Darken (..) where
 
-import Array exposing (Array)
-import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html exposing (Html, div)
+import Html.Attributes exposing (id, class)
 import Html.Events exposing (onClick)
-import Random exposing (Seed, int, generate)
+import Signal exposing (Address)
 import StartApp.Simple as StartApp
-import Signal exposing (Address, message)
+
 
 -- MODEL
 
-port startTime : Float
-port initialPoints : List Point
 
-type alias Cell = Bool
+type Cell
+  = On
+  | Off
 
-type alias Grid = List (List Bool)
 
-type alias Point = { x:Int, y:Int}
+type alias Grid =
+  List (List Cell)
+
+
+type alias Point =
+  { x : Int, y : Int }
+
 
 type alias Model =
-  { grid : Grid,
-    state : String
+  { grid : Grid
+  , state : String
   }
 
-type Action = NoOp | ActivateCell Point
+
+type Action
+  = NoOp
+  | ActivateCell Point
+
 
 emptyGrid : Grid
-emptyGrid = List.repeat 5 (List.repeat 5 False)
+emptyGrid =
+  List.repeat 5 (List.repeat 5 Off)
 
-initialModel: List Point -> Model
+
+initialModel : List Point -> Model
 initialModel initialPoints =
-  { grid = List.foldl toggleCell emptyGrid initialPoints,
-    state = "Playing"
+  { grid = List.foldl pressCell emptyGrid initialPoints
+  , state = "Playing"
   }
+
+
 
 -- UPDATE
 
+
 isComplete : Grid -> Bool
 isComplete grid =
-  List.all (\cell -> cell == False) (List.concat grid)
+  List.all (\cell -> cell == Off) (List.concat grid)
 
-isNeighbor : Point -> Point -> Bool
-isNeighbor {x,y} p =
+
+isConnected : Point -> Point -> Bool
+isConnected { x, y } p =
   let
-    dx = abs (x - p.x)
-    dy = abs (y - p.y)
-  in
-    if (dx == 1 && dy == 0) || (dy == 1 && dx == 0) || (dx == 0 && dy == 0) then
-      True
-    else
-      False
+    dx =
+      abs (x - p.x)
 
-toggleCell : Point -> Grid -> Grid
-toggleCell point grid =
-  List.indexedMap (\y row -> List.indexedMap (\x cell -> if isNeighbor {x=x, y=y} point then not cell else cell) row) grid
+    dy =
+      abs (y - p.y)
+  in
+    (dx == 1 && dy == 0) || (dy == 1 && dx == 0) || (dx == 0 && dy == 0)
+
+
+toggleCell : Cell -> Cell
+toggleCell cell =
+  case cell of
+    On ->
+      Off
+
+    Off ->
+      On
+
+
+pressCell : Point -> Grid -> Grid
+pressCell point grid =
+  List.indexedMap
+    (\y row ->
+      List.indexedMap
+        (\x cell ->
+          if isConnected { x = x, y = y } point then
+            toggleCell cell
+          else
+            cell
+        )
+        row
+    )
+    grid
+
 
 update : Action -> Model -> Model
 update action model =
@@ -63,31 +100,50 @@ update action model =
       model
 
     ActivateCell point ->
-      { model | grid = toggleCell point model.grid }
+      { model | grid = pressCell point model.grid }
+
+
 
 -- VIEW
 
---renderCell : Address Action
+
+renderCell : Address Action -> Int -> Int -> Cell -> Html
+renderCell address x y cell =
+  let
+    cssClass cell =
+      case cell of
+        On ->
+          "square on"
+
+        Off ->
+          "square off"
+  in
+    div [ class (cssClass cell), onClick address (ActivateCell (Point x y)) ] []
+
 
 renderRow : Address Action -> Int -> List Cell -> List Html
 renderRow address y row =
-  let
-    cssClass cell =
-      if cell then "square on" else "square off"
-    renderCell =
-      (\x cell -> (div [ class (cssClass cell), onClick address (ActivateCell (Point x y)) ] [ ]))
-  in
-    (List.indexedMap renderCell row)
+  List.indexedMap (\x cell -> renderCell address x y cell) row
+
 
 view : Address Action -> Model -> Html
 view address model =
-  div [ id "lightsout", class (if isComplete model.grid then "winner" else "")]
-      (List.concat (List.indexedMap (renderRow address) model.grid))
+  div
+    [ id "wrapper"
+    , class
+        (if isComplete model.grid then
+          "winner"
+         else
+          ""
+        )
+    ]
+    [ div
+        [ id "lightsout" ]
+        (List.concat (List.indexedMap (renderRow address) model.grid))
+    ]
 
 
+port initialPoints : List Point
 main : Signal Html
 main =
-  let
-    startTimeSeed = Random.initialSeed <| round startTime
-  in
-    StartApp.start { model = initialModel initialPoints, view = view, update = update }
+  StartApp.start { model = initialModel initialPoints, view = view, update = update }
