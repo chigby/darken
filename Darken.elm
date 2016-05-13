@@ -25,7 +25,6 @@ type alias Point =
 
 type alias Model =
   { grid : Grid
-  , state : String
   }
 
 
@@ -42,7 +41,6 @@ emptyGrid =
 initialModel : List Point -> Model
 initialModel initialPoints =
   { grid = List.foldl pressCell emptyGrid initialPoints
-  , state = "Playing"
   }
 
 
