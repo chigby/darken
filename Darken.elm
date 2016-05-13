@@ -24,8 +24,7 @@ type alias Point =
 
 
 type alias Model =
-  { grid : Grid
-  }
+  { grid : Grid }
 
 
 type Action
