@@ -1,10 +1,9 @@
-module Darken (..) where
+module Darken exposing (..)
 
-import Html exposing (Html, div)
+import Html exposing (..)
+import Html.App as Html
 import Html.Attributes exposing (id, class)
 import Html.Events exposing (onClick)
-import Signal exposing (Address)
-import StartApp.Simple as StartApp
 
 
 -- MODEL
@@ -27,7 +26,7 @@ type alias Model =
     { grid : Grid }
 
 
-type Action
+type Msg
     = NoOp
     | ActivateCell Point
 
@@ -37,10 +36,11 @@ emptyGrid =
     List.repeat 5 (List.repeat 5 Off)
 
 
-initialModel : List Point -> Model
-initialModel initialPoints =
-    { grid = List.foldl pressCell emptyGrid initialPoints
-    }
+init : ( Model, Cmd msg )
+init =
+    ( { grid = List.foldl pressCell emptyGrid [ { x = 1, y = 1 } ] }
+    , Cmd.none
+    )
 
 
 
@@ -90,22 +90,22 @@ pressCell point grid =
         grid
 
 
-update : Action -> Model -> Model
-update action model =
-    case action of
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
         NoOp ->
-            model
+            ( model, Cmd.none )
 
         ActivateCell point ->
-            { model | grid = pressCell point model.grid }
+            ( { model | grid = pressCell point model.grid }, Cmd.none )
 
 
 
 -- VIEW
 
 
-renderCell : Address Action -> Int -> Int -> Cell -> Html
-renderCell address x y cell =
+renderCell : Int -> Int -> Cell -> Html Msg
+renderCell x y cell =
     let
         cssClass cell =
             case cell of
@@ -115,16 +115,16 @@ renderCell address x y cell =
                 Off ->
                     "square off"
     in
-        div [ class (cssClass cell), onClick address (ActivateCell (Point x y)) ] []
+        div [ class (cssClass cell), onClick (ActivateCell (Point x y)) ] []
 
 
-renderRow : Address Action -> Int -> List Cell -> List Html
-renderRow address y row =
-    List.indexedMap (\x cell -> renderCell address x y cell) row
+renderRow : Int -> List Cell -> List (Html Msg)
+renderRow y row =
+    List.indexedMap (\x cell -> renderCell x y cell) row
 
 
-view : Address Action -> Model -> Html
-view address model =
+view : Model -> Html Msg
+view model =
     div
         [ id "wrapper"
         , class
@@ -135,13 +135,9 @@ view address model =
             )
         ]
         [ div [ id "lightsout" ]
-            (List.concat (List.indexedMap (renderRow address) model.grid))
+            (List.concat (List.indexedMap renderRow model.grid))
         ]
 
 
-port initialPoints : List Point
-
-
-main : Signal Html
 main =
-    StartApp.start { model = initialModel initialPoints, view = view, update = update }
+    Html.program { init = init, update = update, view = view, subscriptions = \_ -> Sub.none }
