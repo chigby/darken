@@ -1,9 +1,10 @@
-module Darken exposing (Cell(..), Grid, Model, Msg(..), Point, emptyGrid, init, isComplete, isConnected, main, pressCell, renderCell, renderRow, toggleCell, update, view)
+module Darken exposing (main)
 
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
+import Random
 
 
 
@@ -30,6 +31,8 @@ type alias Model =
 type Msg
     = NoOp
     | ActivateCell Point
+    | NewGame (List Point)
+    | Reset
 
 
 emptyGrid : Grid
@@ -37,11 +40,16 @@ emptyGrid =
     List.repeat 5 (List.repeat 5 Off)
 
 
-init : () -> ( Model, Cmd msg )
-init _ =
-    ( { grid = List.foldl pressCell emptyGrid [ { x = 1, y = 1 } ] }
-    , Cmd.none
-    )
+initializeGame : ( Model, Cmd Msg )
+initializeGame =
+    let
+        model =
+            { grid = emptyGrid }
+
+        cmd =
+            randomPoints NewGame
+    in
+    ( model, cmd )
 
 
 
@@ -101,6 +109,19 @@ update msg model =
         ActivateCell point ->
             ( { model | grid = pressCell point model.grid }, Cmd.none )
 
+        Reset ->
+            initializeGame
+
+        NewGame points ->
+            ( { grid = List.foldl pressCell model.grid points }, Cmd.none )
+
+
+randomPoints : (List Point -> Msg) -> Cmd Msg
+randomPoints msg =
+    Random.map2 Point (Random.int 0 4) (Random.int 0 4)
+        |> Random.list 5
+        |> Random.generate msg
+
 
 
 -- VIEW
@@ -145,7 +166,7 @@ view model =
 
 main =
     Browser.document
-        { init = init
+        { init = \() -> initializeGame
         , update = update
         , view = \model -> { title = "Darken", body = [ view model ] }
         , subscriptions = \_ -> Sub.none
