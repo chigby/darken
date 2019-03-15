@@ -1,9 +1,10 @@
-module Darken exposing (..)
+module Darken exposing (Cell(..), Grid, Model, Msg(..), Point, emptyGrid, init, isComplete, isConnected, main, pressCell, renderCell, renderRow, toggleCell, update, view)
 
+import Browser
 import Html exposing (..)
-import Html.App as Html
-import Html.Attributes exposing (id, class)
+import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
+
 
 
 -- MODEL
@@ -36,8 +37,8 @@ emptyGrid =
     List.repeat 5 (List.repeat 5 Off)
 
 
-init : ( Model, Cmd msg )
-init =
+init : () -> ( Model, Cmd msg )
+init _ =
     ( { grid = List.foldl pressCell emptyGrid [ { x = 1, y = 1 } ] }
     , Cmd.none
     )
@@ -61,7 +62,7 @@ isConnected { x, y } p =
         dy =
             abs (y - p.y)
     in
-        (dx == 1 && dy == 0) || (dy == 1 && dx == 0) || (dx == 0 && dy == 0)
+    (dx == 1 && dy == 0) || (dy == 1 && dx == 0) || (dx == 0 && dy == 0)
 
 
 toggleCell : Cell -> Cell
@@ -82,6 +83,7 @@ pressCell point grid =
                 (\x cell ->
                     if isConnected { x = x, y = y } point then
                         toggleCell cell
+
                     else
                         cell
                 )
@@ -104,18 +106,19 @@ update msg model =
 -- VIEW
 
 
+cssClass : Cell -> String
+cssClass cell =
+    case cell of
+        On ->
+            "square on"
+
+        Off ->
+            "square off"
+
+
 renderCell : Int -> Int -> Cell -> Html Msg
 renderCell x y cell =
-    let
-        cssClass cell =
-            case cell of
-                On ->
-                    "square on"
-
-                Off ->
-                    "square off"
-    in
-        div [ class (cssClass cell), onClick (ActivateCell (Point x y)) ] []
+    div [ class (cssClass cell), onClick (ActivateCell (Point x y)) ] []
 
 
 renderRow : Int -> List Cell -> List (Html Msg)
@@ -130,6 +133,7 @@ view model =
         , class
             (if isComplete model.grid then
                 "winner"
+
              else
                 ""
             )
@@ -140,4 +144,9 @@ view model =
 
 
 main =
-    Html.program { init = init, update = update, view = view, subscriptions = \_ -> Sub.none }
+    Browser.document
+        { init = init
+        , update = update
+        , view = \model -> { title = "Darken", body = [ view model ] }
+        , subscriptions = \_ -> Sub.none
+        }
