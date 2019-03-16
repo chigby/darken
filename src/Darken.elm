@@ -24,8 +24,9 @@ type alias Point =
     { x : Int, y : Int }
 
 
-type alias Model =
-    { grid : Grid }
+type Model
+    = Playing Grid
+    | GameOver Grid
 
 
 type Msg
@@ -44,7 +45,7 @@ initializeGame : ( Model, Cmd Msg )
 initializeGame =
     let
         model =
-            { grid = emptyGrid }
+            Playing emptyGrid
 
         cmd =
             randomPoints NewGame
@@ -107,13 +108,41 @@ update msg model =
             ( model, Cmd.none )
 
         ActivateCell point ->
-            ( { model | grid = pressCell point model.grid }, Cmd.none )
+            updateCell point model
 
         Reset ->
             initializeGame
 
         NewGame points ->
-            ( { grid = List.foldl pressCell model.grid points }, Cmd.none )
+            let
+                newGrid =
+                    List.foldl pressCell emptyGrid points
+            in
+            ( Playing newGrid, Cmd.none )
+
+
+updateCell : Point -> Model -> ( Model, Cmd Msg )
+updateCell point model =
+    case model of
+        Playing grid ->
+            let
+                newGrid =
+                    pressCell point grid
+
+                isFinished =
+                    isComplete newGrid
+
+                newModel =
+                    if isFinished then
+                        GameOver newGrid
+
+                    else
+                        Playing newGrid
+            in
+            ( newModel, Cmd.none )
+
+        GameOver grid ->
+            ( model, Cmd.none )
 
 
 randomPoints : (List Point -> Msg) -> Cmd Msg
@@ -149,19 +178,37 @@ renderRow y row =
 
 view : Model -> Html Msg
 view model =
-    div
-        [ id "wrapper"
-        , class
-            (if isComplete model.grid then
-                "winner"
+    case model of
+        Playing grid ->
+            wrapper grid
 
-             else
-                ""
-            )
+        GameOver grid ->
+            winWrapper grid
+
+
+viewGrid : Grid -> Html Msg
+viewGrid grid =
+    div [ id "lightsout" ]
+        (List.concat (List.indexedMap renderRow grid))
+
+
+winWrapper : Grid -> Html Msg
+winWrapper grid =
+    div
+        [ id "wrapper", class "winner" ]
+        [ viewGrid grid
+        , div [ class "winbox" ]
+            [ p [] [ text "Darkness complete." ]
+            , span [ onClick Reset ] [ text "Play again?" ]
+            ]
         ]
-        [ div [ id "lightsout" ]
-            (List.concat (List.indexedMap renderRow model.grid))
-        ]
+
+
+wrapper : Grid -> Html Msg
+wrapper grid =
+    div
+        [ id "wrapper" ]
+        [ viewGrid grid ]
 
 
 main =
