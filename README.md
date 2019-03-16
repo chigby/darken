@@ -1,6 +1,6 @@
 # Darken
 
-A clone of the Lights Out puzzle game.  [See the game running](http://protomatter.nullsurface.xyz/darken/ ).  Here's [how to solve it](http://www.logicgamesonline.com/lightsout/tutorial.html ) if you are wondering.
+A clone of the Lights Out puzzle game.  [See the game running](http://chigby.org/darken/ ).  Here's [how to solve it](http://www.logicgamesonline.com/lightsout/tutorial.html ) if you are wondering.
 
 ## Instructions to run locally
 
